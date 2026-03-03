@@ -8,7 +8,7 @@ CSC 667 Term Project — Spring 2026
 |------|--------|-------|
 | Julia Bui | @juliabui | jbui1@sfsu.edu |
 | Zaniya Simpson | @ZSimpson12 | zsimpson@sfsu.edu |
-| Member 3 | @username | email@sfsu.edu |
+| Gabriel Purizaca | @gabep23 | gpurizaca@sfsu.edu |
 | Member 4 | @username | email@sfsu.edu |
 
 ## Setup
