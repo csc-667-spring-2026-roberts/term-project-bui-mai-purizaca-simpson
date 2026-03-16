@@ -27,7 +27,10 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
+    "@types/bcrypt": "^6.0.0",
+    "@types/connect-pg-simple": "^7.0.3",
     "@types/express": "^5.0.6",
+    "@types/express-session": "^1.18.2",
     "@types/node": "^20.11.0",
     "eslint": "^9.0.0",
     "husky": "^9.0.0",
@@ -40,8 +43,11 @@
     "typescript-eslint": "^8.0.0"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
+    "connect-pg-simple": "^10.0.0",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "express-session": "^1.19.0",
     "pg-promise": "^12.6.2"
   }
 }

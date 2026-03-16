@@ -1,11 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Sorry! Multiplayer</title>
-  </head>
-  <body>
-    <h1>Welcome to Sorry!</h1>
-    <p>Multiplayer game coming soon.</p>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <title>Sorry! Multiplayer</title>
+</head>
+<body>
+  <h1>Welcome to Sorry!</h1>
+  <p>Multiplayer game coming soon.</p>
+
+  <hr />
+
+  <h2>Authentication Test</h2>
+
+  <h3>Register</h3>
+  <input id="register-email" type="email" placeholder="Email" />
+  <input id="register-password" type="password" placeholder="Password" />
+  <button id="register-btn">Register</button>
+
+  <h3>Login</h3>
+  <input id="login-email" type="email" placeholder="Email" />
+  <input id="login-password" type="password" placeholder="Password" />
+  <button id="login-btn">Login</button>
+
+  <h3>Actions</h3>
+  <button id="test-btn">Visit Protected Route (/test)</button>
+  <button id="logout-btn">Logout</button>
+
+  <h3>Response</h3>
+  <pre id="output"></pre>
+
+  <script>
+    const output = document.getElementById("output");
+
+    async function sendRequest(url, options = {}) {
+      const response = await fetch(url, {
+        credentials: "include",
+        ...options
+      });
+
+      const text = await response.text();
+
+      try {
+        output.textContent =
+          "Status: " + response.status + "\n\n" +
+          JSON.stringify(JSON.parse(text), null, 2);
+      } catch {
+        output.textContent = "Status: " + response.status + "\n\n" + text;
+      }
+    }
+
+    document.getElementById("register-btn").addEventListener("click", async () => {
+      const email = document.getElementById("register-email").value;
+      const password = document.getElementById("register-password").value;
+
+      await sendRequest("/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+    });
+
+    document.getElementById("login-btn").addEventListener("click", async () => {
+      const email = document.getElementById("login-email").value;
+      const password = document.getElementById("login-password").value;
+
+      await sendRequest("/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+    });
+
+    document.getElementById("test-btn").addEventListener("click", async () => {
+      await sendRequest("/test");
+    });
+
+    document.getElementById("logout-btn").addEventListener("click", async () => {
+      await sendRequest("/auth/logout", { method: "POST" });
+    });
+  </script>
+</body>
 </html>

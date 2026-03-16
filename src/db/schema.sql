@@ -1,4 +1,4 @@
- -- Run:  psql -d term_project_dev -f schema.sql
+ -- Run:  psql -d "$DATABASE_URL" -f schema.sql
 
 -- test_table
 CREATE TABLE IF NOT EXISTS test_table (
@@ -81,3 +81,11 @@ INSERT INTO card (value, description, move_count) VALUES
   ('12',    'Move 12 forward',                                              12),
   ('Sorry', 'Take pawn from Start, bump opponent pawn back to their Start', NULL)
 ON CONFLICT (value) DO NOTHING;
+
+-- users table for authentication
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  email VARCHAR(255) NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
