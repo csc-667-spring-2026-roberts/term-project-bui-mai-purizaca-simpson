@@ -1,0 +1,25 @@
+<h2>
+    Login
+</h2>
+
+<% if (typeof error !== "undefined" && error) { %>
+    <div class="error">
+        <%= error %>
+    </div>
+    <% } %>
+
+<form action="/auth/login" method="POST">
+    <div>
+        <label for="email" class="for">
+            Email
+        </label>
+        <input type="email" name="email" id="email" required>
+    </div>
+    <div>
+        <label for="password" name="password" id="password" class="for"></label>
+        <input type="password" name="password" id="password" required>
+    </div>
+    <button type="submit">Login</button>
+</form>
+
+<p>Don't have an account? <a href="/auth/register">Register</a></p>

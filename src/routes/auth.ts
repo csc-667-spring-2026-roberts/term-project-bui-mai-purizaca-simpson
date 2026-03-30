@@ -17,6 +17,10 @@ type RegisterBody = {
   password?: string;
 };
 
+router.get("/register", (_request, response) => {
+  response.render("auth/register");
+});
+
 router.post(
   "/register",
   async (
@@ -31,7 +35,7 @@ router.post(
       email.trim() === "" ||
       password.length < 6
     ) {
-      res.status(400).json({ error: "Invalid input" });
+      res.render("auth/register", { error: "Invalid input" });
       return;
     }
 
@@ -43,7 +47,7 @@ router.post(
       ]);
 
       if (existingUser !== null) {
-        res.status(409).json({ error: "Email already in use" });
+        res.render("auth/register", { error: "Email already in use" });
         return;
       }
 
@@ -60,14 +64,10 @@ router.post(
 
       req.session.userId = newUser.id;
       req.session.userEmail = newUser.email;
-
-      res.status(201).json({
-        message: "Registered successfully",
-        user: newUser,
-      });
+      res.redirect("/lobby");
     } catch (error) {
       console.error("Register error:", error);
-      res.status(500).json({ error: "Server error" });
+      res.render("auth/register", { error: "Server error" });
     }
   },
 );
@@ -81,7 +81,7 @@ router.post(
     const { email, password } = req.body;
 
     if (typeof email !== "string" || typeof password !== "string" || email.trim() === "") {
-      res.status(400).json({ error: "Invalid input" });
+      res.render("auth/login", { error: "Invalid input" });
       return;
     }
 
@@ -93,30 +93,23 @@ router.post(
       ]);
 
       if (user === null) {
-        res.status(401).json({ error: "Invalid email or password" });
+        res.render("auth/login", { error: "Invalid email or password" });
         return;
       }
 
       const passwordMatches = await bcrypt.compare(password, user.password_hash);
 
       if (!passwordMatches) {
-        res.status(401).json({ error: "Invalid email or password" });
+        res.render("auth/login", { error: "Invalid email or password" });
         return;
       }
 
       req.session.userId = user.id;
       req.session.userEmail = user.email;
-
-      res.json({
-        message: "Logged in successfully",
-        user: {
-          id: user.id,
-          email: user.email,
-        },
-      });
+      res.redirect("/lobby");
     } catch (error) {
       console.error("Login error:", error);
-      res.status(500).json({ error: "Server error" });
+      res.render("auth/login", { error: "Server error" });
     }
   },
 );
@@ -125,12 +118,10 @@ router.post("/logout", (req: Request, res: Response): void => {
   req.session.destroy((error: Error | null) => {
     if (error !== null) {
       console.error("Logout error:", error);
-      res.status(500).json({ error: "Could not log out" });
-      return;
     }
 
     res.clearCookie("connect.sid");
-    res.json({ message: "Logged out successfully" });
+    res.redirect("/auth/login");
   });
 });
 
