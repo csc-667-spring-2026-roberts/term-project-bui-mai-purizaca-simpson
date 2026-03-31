@@ -72,6 +72,10 @@ router.post(
   },
 );
 
+router.get("/login", (_request, response) => {
+  response.render("auth/login");
+});
+
 router.post(
   "/login",
   async (

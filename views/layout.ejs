@@ -20,15 +20,9 @@
             <a href="/auth/login">Login</a>
             <a href="/auth/register">Register</a>
       <% } %> 
-    </nav>
+        <%- body %>
 
-    <main>
-        <% if (typeof error !== "undefined" && error) { %>
-            <div class="error">
-                <%= error %>
-            </div>
-        <% } %>
-            <%- body %>
+            
     </main>
 </body>
 </html>

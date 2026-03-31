@@ -31,6 +31,7 @@
     "@types/connect-pg-simple": "^7.0.3",
     "@types/ejs": "^3.1.5",
     "@types/express": "^5.0.6",
+    "@types/express-ejs-layouts": "^2.5.4",
     "@types/express-session": "^1.18.2",
     "@types/node": "^20.11.0",
     "eslint": "^9.0.0",
@@ -50,6 +51,7 @@
     "dotenv": "^17.3.1",
     "ejs": "^5.0.1",
     "express": "^5.2.1",
+    "express-ejs-layouts": "^2.5.1",
     "express-session": "^1.19.0",
     "node": "^25.8.1",
     "pg-promise": "^12.6.2"
