@@ -4,17 +4,21 @@
   "description": "CSC 667 Term Project - Spring 2026",
   "main": "dist/index.js",
   "type": "module",
-  "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "tsx watch src/index.ts",
-    "lint": "eslint src/",
-    "lint:fix": "eslint src/ --fix",
-    "format": "prettier --write \"src/**/*.ts\"",
-    "format:check": "prettier --check \"src/**/*.ts\"",
-    "clean": "rm -rf dist/",
-    "prepare": "husky"
-  },
+"scripts": {
+  "build": "tsc && npm run build:client",
+  "build:client": "esbuild src/client/*.ts --bundle --outdir=public/js --platform=browser --format=esm",
+  "watch:client": "esbuild src/client/*.ts --bundle --outdir=public/js --platform=browser --format=esm --watch",
+  "dev:server": "tsx watch src/index.ts",
+  "dev:livereload": "livereload .",
+  "dev": "concurrently \"npm run watch:client\" \"npm run dev:server\" \"npm run dev:livereload\"",
+  "start": "node dist/index.js",
+  "lint": "eslint src/",
+  "lint:fix": "eslint src/ --fix",
+  "format": "prettier --write \"src/**/*.ts\"",
+  "format:check": "prettier --check \"src/**/*.ts\"",
+  "clean": "rm -rf dist/",
+  "prepare": "husky"
+},
   "lint-staged": {
     "src/**/*.ts": [
       "prettier --write",
@@ -34,9 +38,12 @@
     "@types/express-ejs-layouts": "^2.5.4",
     "@types/express-session": "^1.18.2",
     "@types/node": "^20.11.0",
+    "concurrently": "^9.2.1",
+    "esbuild": "^0.28.0",
     "eslint": "^9.0.0",
     "husky": "^9.0.0",
     "lint-staged": "^15.2.0",
+    "livereload": "^0.10.3",
     "nodemon": "^3.1.14",
     "prettier": "^3.2.0",
     "prettier-plugin-ejs": "^1.0.3",
@@ -47,6 +54,7 @@
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "connect-livereload": "^0.6.1",
     "connect-pg-simple": "^10.0.0",
     "dotenv": "^17.3.1",
     "ejs": "^5.0.1",

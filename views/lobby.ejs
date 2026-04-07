@@ -1,2 +1,28 @@
-<h2>Lobby</h2>
-<p>Welcome to the game lobby!</p>
+<main>
+    <h2>Lobby</h2>
+    <p>Welcome to the game lobby!</p>
+    
+    <p>Logged in as: <strong><%= user.email %></strong></p>
+    
+    <section>
+        <h3>Activity Demo</h3>
+        <p>This button loads activity from the server without reloading the page.</p>
+        <button id="load-activity-btn" type="button">Load Activity</button>
+    </section>
+
+    <section>
+        <h3>Recent Activity</h3>
+        <div id="activity-list"></div>
+    </section>
+
+    <template id="activity-item-template">
+        <article class="activity-item">
+            <p><strong>ID:</strong> <span class="activity-id"></span></p>
+            <p><strong>Message:</strong> <span class="activity-message"></span></p>
+            <p><strong>Created:</strong> <span class="activity-created-at"></span></p>
+            <hr>
+        </article>
+    </template>
+    
+    <script defer type="module" src="/js/lobby.js"></script>
+</main>
