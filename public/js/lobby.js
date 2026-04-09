@@ -58,3 +58,4 @@ if (loadButton instanceof HTMLButtonElement) {
     void loadActivity();
   });
 }
+//# sourceMappingURL=lobby.js.map

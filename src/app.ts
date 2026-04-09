@@ -9,6 +9,8 @@ import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import dotenv from "dotenv";
 import expressLayouts from "express-ejs-layouts";
+import livereload from "livereload";
+import connectLivereload from "connect-livereload";
 
 import authRoutes from "./routes/auth.js";
 import testRoutes from "./routes/test.js";
@@ -26,6 +28,19 @@ const PgSession = connectPgSimple(session);
 const sessionSecret = process.env.SESSION_SECRET;
 if (sessionSecret === undefined) {
   throw new Error("SESSION_SECRET is undefined");
+}
+
+if (process.env.NODE_ENV !== "production") {
+  const liveReloadServer = livereload.createServer({
+    exts: ["ejs", "css", "js"],
+  });
+
+  liveReloadServer.watch([
+    path.join(__dirname, "..", "views"),
+    path.join(__dirname, "..", "public"),
+  ]);
+
+  app.use(connectLivereload());
 }
 
 // body parsing
