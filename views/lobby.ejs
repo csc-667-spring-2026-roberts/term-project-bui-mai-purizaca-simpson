@@ -1,9 +1,14 @@
 <main>
     <h2>Lobby</h2>
     <p>Welcome to the game lobby!</p>
-    
+
     <p>Logged in as: <strong><%= user.email %></strong></p>
-    
+
+    <section>
+        <h3>Live Connection</h3>
+        <p>Status: <span id="sse-status" class="sse-status sse-status--disconnected">disconnected</span></p>
+    </section>
+
     <section>
         <h3>Activity Demo</h3>
         <p>This button loads activity from the server without reloading the page.</p>

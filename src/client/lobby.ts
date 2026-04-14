@@ -1,3 +1,72 @@
+// ---------------------------------------------------------------------------
+// Store — single source of truth for client-side state
+// SSE events flow in and update this; the UI re-renders from it.
+// ---------------------------------------------------------------------------
+
+interface StoreState {
+  connectionStatus: "connected" | "disconnected" | "reconnecting";
+  lastEvent: { type: string; data: unknown } | null;
+}
+
+const store: StoreState = {
+  connectionStatus: "disconnected",
+  lastEvent: null,
+};
+
+type StoreListener = (state: StoreState) => void;
+const storeListeners: StoreListener[] = [];
+
+function updateStore(patch: Partial<StoreState>): void {
+  Object.assign(store, patch);
+  for (const listener of storeListeners) {
+    listener(store);
+  }
+}
+
+function onStoreChange(listener: StoreListener): void {
+  storeListeners.push(listener);
+}
+
+// ---------------------------------------------------------------------------
+// SSE connection — state comes DOWN from server via EventSource
+// EventSource auto-reconnects on network failure (built-in browser behavior)
+// ---------------------------------------------------------------------------
+
+function connectSSE(): void {
+  const eventSource = new EventSource("/api/sse");
+
+  eventSource.addEventListener("open", () => {
+    updateStore({ connectionStatus: "connected" });
+  });
+
+  eventSource.addEventListener("error", () => {
+    // EventSource will automatically attempt to reconnect
+    updateStore({ connectionStatus: "reconnecting" });
+  });
+
+  eventSource.addEventListener("message", (event: MessageEvent) => {
+    const rawData = event.data as string;
+    const data: unknown = JSON.parse(rawData);
+    updateStore({ lastEvent: { type: "message", data } });
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Render SSE connection status to the DOM
+// ---------------------------------------------------------------------------
+
+function renderConnectionStatus(state: StoreState): void {
+  const statusEl = document.getElementById("sse-status");
+  if (!(statusEl instanceof HTMLElement)) return;
+
+  statusEl.textContent = state.connectionStatus;
+  statusEl.className = `sse-status sse-status--${state.connectionStatus}`;
+}
+
+// ---------------------------------------------------------------------------
+// Activity demo — existing feature (unchanged)
+// ---------------------------------------------------------------------------
+
 type TestRow = {
   id: number;
   message: string;
@@ -81,8 +150,14 @@ async function loadActivity(): Promise<void> {
   }
 }
 
-const loadButton = document.getElementById("load-activity-btn");
+// ---------------------------------------------------------------------------
+// Init
+// ---------------------------------------------------------------------------
 
+onStoreChange(renderConnectionStatus);
+connectSSE();
+
+const loadButton = document.getElementById("load-activity-btn");
 if (loadButton instanceof HTMLButtonElement) {
   loadButton.addEventListener("click", () => {
     void loadActivity();

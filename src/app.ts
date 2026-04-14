@@ -15,6 +15,7 @@ import connectLivereload from "connect-livereload";
 import authRoutes from "./routes/auth.js";
 import testRoutes from "./routes/test.js";
 import lobbyRoutes from "./routes/lobby.js";
+import sseRoutes from "./routes/sse.js";
 import homeRoutes from "./routes/home.js";
 
 dotenv.config();
@@ -77,6 +78,7 @@ app.use(express.static(path.join(__dirname, "../public")));
 app.use("/auth", authRoutes);
 app.use("/test", testRoutes);
 app.use("/lobby", lobbyRoutes);
+app.use("/api", sseRoutes);
 app.use("/", homeRoutes);
 
 app.use((_req, res) => {
