@@ -1,11 +1,19 @@
 import pgPromise from "pg-promise";
 import dotenv from "dotenv";
 
-//load env variable
 dotenv.config();
+
 const connectionString = process.env.DATABASE_URL;
+
 if (connectionString === undefined) {
-  throw new Error("Connection string undefined");
+  throw new Error("DATABASE_URL is undefined");
 }
 
-export default pgPromise()(connectionString);
+const sslConfig = process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false;
+
+const db = pgPromise()({
+  connectionString,
+  ssl: sslConfig,
+});
+
+export default db;

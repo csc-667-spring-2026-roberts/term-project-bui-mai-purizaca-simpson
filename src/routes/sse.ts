@@ -1,30 +1,25 @@
-import { Router } from "express";
-import { requireAuth } from "../middleware/requireAuth.js";
-import { addClient, broadcast, removeClient } from "../sse.js";
+import { Router, type Request, type Response } from "express";
+import { addClient, removeClient } from "../sse.js";
 
 const router = Router();
 
-// GET /api/sse?gameId=<id>
-// Establishes a persistent SSE connection for the authenticated user.
-// Optional gameId query param subscribes the client to a specific game room.
-router.get("/sse", requireAuth, (request, response) => {
-  const userId = request.session.userId as number;
-  const gameIdParam = request.query.gameId;
-  const gameId = typeof gameIdParam === "string" ? Number(gameIdParam) : undefined;
+router.get("/sse", (request: Request, response: Response): void => {
+  const userId = request.session.userId;
 
-  const clientId = addClient(response, userId, gameId);
+  if (userId === undefined) {
+    response.status(401).json({ error: "Not authenticated" });
+    return;
+  }
+
+  const gameIdRaw = request.query.gameId;
+  const gameId =
+    typeof gameIdRaw === "string" && gameIdRaw.length > 0 ? Number(gameIdRaw) : undefined;
+
+  const clientId = addClient(response, userId, Number.isInteger(gameId) ? gameId : undefined);
 
   request.on("close", () => {
     removeClient(clientId);
   });
-});
-
-// POST /api/sse/broadcast
-// Broadcasts a JSON payload to all connected SSE clients.
-// Used for testing and for server-initiated state pushes.
-router.post("/sse/broadcast", requireAuth, (request, response) => {
-  broadcast(request.body as object);
-  response.json({ ok: true });
 });
 
 export default router;

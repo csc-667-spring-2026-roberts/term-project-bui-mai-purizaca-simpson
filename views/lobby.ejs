@@ -1,33 +1,34 @@
 <main>
-    <h2>Lobby</h2>
-    <p>Welcome to the game lobby!</p>
+  <h1>Sorry! Multiplayer Lobby</h1>
 
-    <p>Logged in as: <strong><%= user.email %></strong></p>
+  <p>
+    Create a Sorry! game, join with two players, start the game, then draw/play
+    one card. Updates are pushed live through server-sent events.
+  </p>
 
-    <section>
-        <h3>Live Connection</h3>
-        <p>Status: <span id="sse-status" class="sse-status sse-status--disconnected">disconnected</span></p>
-    </section>
+  <p>Logged in as: <strong><%= user.email %></strong></p>
 
-    <section>
-        <h3>Activity Demo</h3>
-        <p>This button loads activity from the server without reloading the page.</p>
-        <button id="load-activity-btn" type="button">Load Activity</button>
-    </section>
+  <section>
+    <h2>Live Connection</h2>
+    <p>
+      SSE status:
+      <span id="sse-status" class="sse-status sse-status--disconnected">
+        disconnected
+      </span>
+    </p>
+    <p id="lobby-message"></p>
+  </section>
 
-    <section>
-        <h3>Recent Activity</h3>
-        <div id="activity-list"></div>
-    </section>
+  <section>
+    <h2>Games</h2>
+    <button id="create-game-btn" type="button">Create Sorry! Game</button>
+    <div id="game-list" class="game-list"></div>
+  </section>
 
-    <template id="activity-item-template">
-        <article class="activity-item">
-            <p><strong>ID:</strong> <span class="activity-id"></span></p>
-            <p><strong>Message:</strong> <span class="activity-message"></span></p>
-            <p><strong>Created:</strong> <span class="activity-created-at"></span></p>
-            <hr>
-        </article>
-    </template>
-    
-    <script defer type="module" src="/js/lobby.js"></script>
+  <section>
+    <h2>Selected Game</h2>
+    <div id="game-detail" class="game-detail"></div>
+  </section>
+
+  <script defer type="module" src="/js/lobby.js"></script>
 </main>

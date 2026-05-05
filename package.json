@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "type": "module",
 "scripts": {
-  "build": "tsc && npm run build:client",
+  "build": "tsc && node dist/db/migrate.js && npm run build:client",
   "build:client": "esbuild src/client/*.ts --bundle --outdir=public/js --platform=browser --format=esm --sourcemap",
   "dev:client": "esbuild src/client/*.ts --bundle --outdir=public/js --platform=browser --format=esm --sourcemap --watch",
   "dev:server": "tsx watch src/index.ts",
@@ -18,7 +18,7 @@
   "format": "prettier --write \"src/**/*.ts\"",
   "format:check": "prettier --check \"src/**/*.ts\"",
   "clean": "rm -rf dist/",
-  "prepare": "husky"
+  "prepare": "husky || true"
 },
   "lint-staged": {
     "src/**/*.ts": [

@@ -1,191 +1,271 @@
-/**
- * Store — keeps track of everything the page needs to know
- */
+type ConnectionStatus = "connected" | "disconnected" | "reconnecting";
 
-interface StoreState {
-  // connectionStatus: are we connected to the server right now, or not?
-  connectionStatus: "connected" | "disconnected" | "reconnecting";
-  // lastEvent: the most recent message we got from the server
-  lastEvent: { type: string; data: unknown } | null;
-}
+type GameSummary = {
+  id: number;
+  status: string;
+  player_count: number;
+  created_at: string;
+};
+
+type Player = {
+  id: number;
+  user_id: number | null;
+  username: string;
+  color: string;
+  turn_order: number;
+};
+
+type Discard = {
+  id: number;
+  username: string;
+  color: string;
+  value: string;
+  description: string;
+  created_at: string;
+};
+
+type GameState = {
+  game: { id: number; status: string; current_turn: number };
+  players: Player[];
+  deckRemaining: number;
+  discard: Discard[];
+  myPlayerId: number | null;
+};
+
+type SsePayload = {
+  type?: string;
+  gameId?: number;
+};
+
+type StoreState = {
+  connectionStatus: ConnectionStatus;
+  games: GameSummary[];
+  selectedGameId: number | null;
+  gameState: GameState | null;
+  message: string;
+};
 
 const store: StoreState = {
   connectionStatus: "disconnected",
-  lastEvent: null,
+  games: [],
+  selectedGameId: null,
+  gameState: null,
+  message: "",
 };
 
-// a list of functions to call whenever the store changes.
-type StoreListener = (state: StoreState) => void;
-// any part of the page that needs to react to updates registers itself here.
-const storeListeners: StoreListener[] = [];
-
-// updates the store with new data, then notifies every listener.
 function updateStore(patch: Partial<StoreState>): void {
-  // patch = the desired fields to change so not everything has to be passed.
   Object.assign(store, patch);
-  for (const listener of storeListeners) {
-    listener(store);
+  render();
+}
+
+function getElement(id: string): HTMLElement | null {
+  return document.getElementById(id);
+}
+
+function clearElement(element: HTMLElement): void {
+  while (element.firstChild !== null) {
+    element.removeChild(element.firstChild);
   }
 }
 
-// Register a function to be called whenever the store changes.
-function onStoreChange(listener: StoreListener): void {
-  storeListeners.push(listener);
+function appendText(parent: HTMLElement, tagName: string, text: string): HTMLElement {
+  const element = document.createElement(tagName);
+  element.textContent = text;
+  parent.appendChild(element);
+  return element;
 }
 
-/**
- * SSE connection — opens a live connection to the server
- * The server can push messages to us at any time through this connection.
- * If the connection drops, the browser will automatically try to reconnect.
- */
+async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
+  const response = await fetch(url, {
+    headers: { Accept: "application/json", "Content-Type": "application/json" },
+    ...options,
+  });
+
+  if (!response.ok) {
+    throw new Error(await response.text());
+  }
+
+  return (await response.json()) as T;
+}
+
+async function loadGames(): Promise<void> {
+  const games = await fetchJson<GameSummary[]>("/games");
+  updateStore({ games });
+}
+
+async function loadGameState(gameId: number): Promise<void> {
+  const gameState = await fetchJson<GameState>(`/games/${String(gameId)}`);
+  updateStore({ selectedGameId: gameId, gameState });
+}
+
+async function createGame(): Promise<void> {
+  const game = await fetchJson<{ id: number }>("/games", { method: "POST" });
+  updateStore({
+    selectedGameId: game.id,
+    message: `Created game #${String(game.id)}.`,
+  });
+  await loadGames();
+  await loadGameState(game.id);
+}
+
+async function postGameAction(path: string, successMessage: string): Promise<void> {
+  if (store.selectedGameId === null) return;
+
+  await fetchJson<GameState>(`/games/${String(store.selectedGameId)}/${path}`, {
+    method: "POST",
+  });
+
+  updateStore({ message: successMessage });
+  await loadGames();
+  await loadGameState(store.selectedGameId);
+}
+
 function connectSSE(): void {
-  // open a persistent connection to the server's SSE endpoint.
   const eventSource = new EventSource("/api/sse");
 
-  // runs when the connection is successfully established
   eventSource.addEventListener("open", () => {
     updateStore({ connectionStatus: "connected" });
   });
 
-  // runs when the connection drops or something goes wrong.
   eventSource.addEventListener("error", () => {
-    // EventSource will automatically attempt to reconnect
     updateStore({ connectionStatus: "reconnecting" });
   });
 
-  // runs every time the server sends us a new message.
   eventSource.addEventListener("message", (event: MessageEvent) => {
-    const rawData = event.data as string;
-    const data: unknown = JSON.parse(rawData);
-    updateStore({ lastEvent: { type: "message", data } });
+    void handleSseMessage(event.data);
   });
 }
 
-/**
- *  Updates the connection status text shown on the page
- *  Called automatically whenever the store changes
- */
-function renderConnectionStatus(state: StoreState): void {
-  // Find the element on the page that displays the connection status
-  const statusEl = document.getElementById("sse-status");
-  if (!(statusEl instanceof HTMLElement)) return;
+async function handleSseMessage(rawData: string): Promise<void> {
+  const payload = JSON.parse(rawData) as SsePayload;
 
-  // Update the text and CSS class so it can be styled differently
-  statusEl.textContent = state.connectionStatus;
-  statusEl.className = `sse-status sse-status--${state.connectionStatus}`;
-}
+  if (payload.type === "gamesChanged") {
+    await loadGames();
+  }
 
-/**
- * Loads and displays recent activity from the server
- */
-
-// Describes what a single activity record looks like when it comes from the server
-type TestRow = {
-  id: number;
-  message: string;
-  created_at: string;
-};
-
-function clearContainer(container: HTMLElement): void {
-  while (container.firstChild !== null) {
-    container.removeChild(container.firstChild);
+  if (payload.type === "gameStateChanged" && payload.gameId === store.selectedGameId) {
+    await loadGameState(payload.gameId);
   }
 }
 
-// Triggered when the user clicks the "Load Activity" button.
-async function loadActivity(): Promise<void> {
-  const button = document.getElementById("load-activity-btn");
-  const container = document.getElementById("activity-list");
-  const template = document.getElementById("activity-item-template");
+function renderGameList(): void {
+  const list = getElement("game-list");
+  if (list === null) return;
 
-  if (
-    !(button instanceof HTMLButtonElement) ||
-    !(container instanceof HTMLDivElement) ||
-    !(template instanceof HTMLTemplateElement)
-  ) {
+  clearElement(list);
+
+  if (store.games.length === 0) {
+    appendText(list, "p", "No games yet. Create one to start the demo.");
     return;
   }
 
-  button.disabled = true;
-  button.textContent = "Loading...";
+  for (const game of store.games) {
+    const item = document.createElement("article");
+    item.className = "game-card";
 
-  try {
-    // Ask the server for the activity data
-    const response = await fetch("/test", {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
-    });
+    appendText(item, "h4", `Game #${String(game.id)} — ${game.status}`);
+    appendText(item, "p", `${String(game.player_count)} player(s)`);
 
-    // If the server returned an error, throw so we jump to the catch block
-    if (!response.ok) {
-      throw new Error(`Request failed with status ${String(response.status)}`);
-    }
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = "View Game";
+    button.addEventListener("click", () => void loadGameState(game.id));
 
-    // Parse the response as a list of activity records
-    const records: TestRow[] = (await response.json()) as TestRow[];
-
-    // Wipe the current list before rendering the fresh data
-    clearContainer(container);
-
-    // For each record, clone the HTML template and fill in the data
-    for (const record of records) {
-      const fragment = template.content.cloneNode(true);
-
-      if (!(fragment instanceof DocumentFragment)) {
-        continue;
-      }
-
-      // Find the placeholder elements inside the cloned template
-      const idElement = fragment.querySelector(".activity-id");
-      const messageElement = fragment.querySelector(".activity-message");
-      const createdAtElement = fragment.querySelector(".activity-created-at");
-
-      if (
-        !(idElement instanceof HTMLElement) ||
-        !(messageElement instanceof HTMLElement) ||
-        !(createdAtElement instanceof HTMLElement)
-      ) {
-        continue;
-      }
-
-      // Fill in the data for this record
-      idElement.textContent = String(record.id);
-      messageElement.textContent = record.message;
-      createdAtElement.textContent = new Date(record.created_at).toLocaleString();
-
-      // Add the filled-in item to the page
-      container.appendChild(fragment);
-    }
-  } catch (error) {
-    clearContainer(container);
-
-    const errorMessage = document.createElement("p");
-    errorMessage.textContent = "Failed to load activity.";
-    container.appendChild(errorMessage);
-
-    console.error(error);
-  } finally {
-    // Always re-enable the button when we're done, success or failure
-    button.disabled = false;
-    button.textContent = "Load Activity";
+    item.appendChild(button);
+    list.appendChild(item);
   }
 }
 
-/**
- * Startup — runs when the page loads
- */
+function renderPlayers(container: HTMLElement, state: GameState): void {
+  const section = appendText(container, "section", "");
+  appendText(section, "h4", "Players");
 
-// Tell the store to call renderConnectionStatus whenever anything changes
-onStoreChange(renderConnectionStatus);
-// Open the SSE connection to the server so we can receive live updates
-connectSSE();
+  if (state.players.length === 0) {
+    appendText(section, "p", "No players have joined yet.");
+    return;
+  }
 
-// Wire up the Load Activity button so clicking it triggers loadActivity()
-const loadButton = document.getElementById("load-activity-btn");
-if (loadButton instanceof HTMLButtonElement) {
-  loadButton.addEventListener("click", () => {
-    void loadActivity();
-  });
+  for (const player of state.players) {
+    appendText(section, "p", `${player.color}: ${player.username}`);
+  }
 }
+
+function renderDiscard(container: HTMLElement, state: GameState): void {
+  const section = appendText(container, "section", "");
+  appendText(section, "h4", "Recent cards played");
+
+  if (state.discard.length === 0) {
+    appendText(section, "p", "No cards have been played yet.");
+    return;
+  }
+
+  for (const card of state.discard) {
+    appendText(section, "p", `${card.username} drew ${card.value}: ${card.description}`);
+  }
+}
+
+function renderSelectedGame(): void {
+  const detail = getElement("game-detail");
+  if (detail === null) return;
+
+  clearElement(detail);
+
+  if (store.gameState === null) {
+    appendText(detail, "p", "Create or view a game to get started.");
+    return;
+  }
+
+  const state = store.gameState;
+
+  appendText(detail, "h3", `Game #${String(state.game.id)}`);
+  appendText(detail, "p", `Status: ${state.game.status}`);
+  appendText(detail, "p", `Deck remaining: ${String(state.deckRemaining)}`);
+
+  renderPlayers(detail, state);
+
+  const joinButton = document.createElement("button");
+  joinButton.type = "button";
+  joinButton.textContent = "Join Game";
+  joinButton.addEventListener("click", () => void postGameAction("join", "Joined game."));
+  detail.appendChild(joinButton);
+
+  const startButton = document.createElement("button");
+  startButton.type = "button";
+  startButton.textContent = "Start Game";
+  startButton.addEventListener("click", () => void postGameAction("start", "Game started."));
+  detail.appendChild(startButton);
+
+  const drawButton = document.createElement("button");
+  drawButton.type = "button";
+  drawButton.textContent = "Draw / Play Card";
+  drawButton.addEventListener("click", () => void postGameAction("draw-card", "Card played."));
+  detail.appendChild(drawButton);
+
+  renderDiscard(detail, state);
+}
+
+function render(): void {
+  const status = getElement("sse-status");
+  const message = getElement("lobby-message");
+
+  if (status !== null) {
+    status.textContent = store.connectionStatus;
+    status.className = `sse-status sse-status--${store.connectionStatus}`;
+  }
+
+  if (message !== null) {
+    message.textContent = store.message;
+  }
+
+  renderGameList();
+  renderSelectedGame();
+}
+
+const createButton = document.getElementById("create-game-btn");
+
+if (createButton instanceof HTMLButtonElement) {
+  createButton.addEventListener("click", () => void createGame());
+}
+
+connectSSE();
+void loadGames();

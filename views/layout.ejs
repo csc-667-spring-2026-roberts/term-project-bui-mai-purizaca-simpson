@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= typeof title !== "undefined" ? title : "Team Sorry" %></title>
+  <title><%= typeof title !== "undefined" ? title : "Sorry! Multiplayer" %></title>
   <link rel="stylesheet" href="/css/home.css">
 </head>
 <body>
   <nav>
-    <a href="/">Home</a>
+    <a href="/">Sorry! Multiplayer</a>
 
     <% if (typeof user !== "undefined" && user) { %>
-      <span>Welcome, <%= user.email %></span>
+      <span>Signed in as <%= user.email %></span>
       <form action="/auth/logout" method="POST">
         <button type="submit">Logout</button>
       </form>
