@@ -129,11 +129,49 @@ VALUES
   (35, 'safe_zone', 'yellow', true, false, false),
   (36, 'home', 'yellow', false, false, true),
 
+  (7, 'normal', NULL, false, false, false),
+  (8, 'normal', NULL, false, false, false),
+  (9, 'normal', NULL, false, false, false),
+  (10, 'normal', NULL, false, false, false),
+  (11, 'normal', NULL, false, false, false),
+  (12, 'normal', NULL, false, false, false),
+  (13, 'normal', NULL, false, false, false),
+  (14, 'normal', NULL, false, false, false),
+
+  (22, 'normal', NULL, false, false, false),
+  (23, 'normal', NULL, false, false, false),
+  (24, 'normal', NULL, false, false, false),
+  (25, 'normal', NULL, false, false, false),
+  (26, 'normal', NULL, false, false, false),
+  (27, 'normal', NULL, false, false, false),
+  (28, 'normal', NULL, false, false, false),
+  (29, 'normal', NULL, false, false, false),
+
+  (37, 'normal', NULL, false, false, false),
+  (38, 'normal', NULL, false, false, false),
+  (39, 'normal', NULL, false, false, false),
+  (40, 'normal', NULL, false, false, false),
+  (41, 'normal', NULL, false, false, false),
+  (42, 'normal', NULL, false, false, false),
+  (43, 'normal', NULL, false, false, false),
+  (44, 'normal', NULL, false, false, false),
+
   (45, 'start', 'green', false, true, false),
   (46, 'normal', NULL, false, false, false),
   (47, 'normal', NULL, false, false, false),
   (48, 'normal', NULL, false, false, false),
   (49, 'normal', NULL, false, false, false),
   (50, 'safe_zone', 'green', true, false, false),
-  (51, 'home', 'green', false, false, true)
+  (51, 'home', 'green', false, false, true),
+
+  (52, 'normal', NULL, false, false, false),
+  (53, 'normal', NULL, false, false, false),
+  (54, 'normal', NULL, false, false, false),
+  (55, 'normal', NULL, false, false, false),
+  (56, 'normal', NULL, false, false, false),
+  (57, 'normal', NULL, false, false, false),
+  (58, 'normal', NULL, false, false, false),
+  (59, 'normal', NULL, false, false, false)
 ON CONFLICT (position) DO NOTHING;
+
+ALTER TABLE game ADD COLUMN IF NOT EXISTS pending_card_id INT REFERENCES card(id);
