@@ -108,29 +108,44 @@ function renderGameList() {
   if (list === null) return;
   clearElement(list);
   if (store.games.length === 0) {
-    appendText(list, "p", "No games yet. Create one to start the demo.");
+    appendText(list, "p", "No games yet. Create one to get started.");
     return;
   }
   for (const game of store.games) {
     const item = document.createElement("article");
     item.className = "game-card";
-    appendText(item, "h4", `Game #${String(game.id)} \u2014 ${game.status}`);
-    appendText(item, "p", `${String(game.player_count)} player(s)`);
-    const button = makeButton("View Game", () => void loadGameState(game.id));
+    const info = document.createElement("div");
+    info.className = "game-card-info";
+    appendText(info, "h4", `Game #${String(game.id)}`);
+    appendText(info, "p", `${game.status} \xB7 ${String(game.player_count)} player(s)`);
+    item.appendChild(info);
+    const button = makeButton("View", () => void loadGameState(game.id));
     item.appendChild(button);
     list.appendChild(item);
   }
 }
 function renderPlayers(container, state) {
-  const section = appendText(container, "section", "");
+  const section = document.createElement("section");
+  section.className = "panel-section";
   appendText(section, "h4", "Players");
   if (state.players.length === 0) {
     appendText(section, "p", "No players have joined yet.");
+    container.appendChild(section);
     return;
   }
+  const list = document.createElement("div");
+  list.className = "players-list";
   for (const player of state.players) {
-    appendText(section, "p", `${player.color}: ${player.username}`);
+    const item = document.createElement("div");
+    item.className = "player-item";
+    const dot = document.createElement("span");
+    dot.className = `player-dot player-dot--${player.color}`;
+    item.appendChild(dot);
+    appendText(item, "span", player.username);
+    list.appendChild(item);
   }
+  section.appendChild(list);
+  container.appendChild(section);
 }
 function pawnPositionLabel(pawn) {
   if (pawn.is_home) return "Home";
@@ -138,52 +153,113 @@ function pawnPositionLabel(pawn) {
   return `Position ${String(pawn.position)}`;
 }
 function renderPawns(container, state) {
-  const section = appendText(container, "section", "");
+  const section = document.createElement("section");
+  section.className = "panel-section";
   appendText(section, "h4", "Pawns");
   if (state.pawns.length === 0) {
     appendText(section, "p", "No pawns yet.");
+    container.appendChild(section);
     return;
   }
+  const byPlayer = /* @__PURE__ */ new Map();
   for (const pawn of state.pawns) {
-    const label = `${pawn.color} Pawn ${String(pawn.pawn_number)} (${pawn.username}): ${pawnPositionLabel(pawn)}`;
-    appendText(section, "p", label);
+    const arr = byPlayer.get(pawn.player_id) ?? [];
+    arr.push(pawn);
+    byPlayer.set(pawn.player_id, arr);
   }
+  for (const pawns of byPlayer.values()) {
+    const row = document.createElement("div");
+    row.className = "pawn-row";
+    appendText(row, "span", pawns[0]?.username ?? "").className = "pawn-player-name";
+    for (const pawn of pawns) {
+      const dot = document.createElement("div");
+      dot.className = `pawn-dot pawn-dot--${pawn.color}`;
+      if (pawn.is_home) dot.classList.add("is-home");
+      if (pawn.is_start) dot.classList.add("is-start");
+      dot.textContent = String(pawn.pawn_number);
+      dot.title = pawnPositionLabel(pawn);
+      row.appendChild(dot);
+    }
+    section.appendChild(row);
+  }
+  container.appendChild(section);
 }
 function renderPendingCard(container, state) {
   if (state.pendingCard === null) return;
-  const section = appendText(container, "section", "");
+  const section = document.createElement("section");
+  section.className = "panel-section";
   appendText(section, "h4", "Drawn Card");
-  appendText(
-    section,
-    "p",
-    `Card ${state.pendingCard.value}: ${state.pendingCard.description}`
-  );
+  const card = document.createElement("div");
+  card.className = "drawn-card";
+  appendText(card, "div", state.pendingCard.value).className = "card-value";
+  appendText(card, "p", state.pendingCard.description).className = "card-desc";
+  section.appendChild(card);
+  container.appendChild(section);
 }
 function renderValidMoves(container, state) {
   if (state.pendingCard === null) return;
-  const section = appendText(container, "section", "");
+  const section = document.createElement("section");
+  section.className = "panel-section";
   appendText(section, "h4", "Valid Moves");
   if (state.validMoves.length === 0) {
-    appendText(section, "p", "No valid moves \u2014 use Forfeit Turn.");
-    container.appendChild(
-      makeButton("Forfeit Turn", () => void postAction("forfeit-turn", "Turn forfeited."))
-    );
+    appendText(section, "p", "No valid moves.");
+    const btn = makeButton("Forfeit Turn", () => void postAction("forfeit-turn", "Turn forfeited."));
+    btn.className = "btn-action btn-forfeit";
+    section.appendChild(btn);
+    container.appendChild(section);
     return;
   }
+  const list = document.createElement("div");
+  list.className = "moves-list";
   for (const move of state.validMoves) {
     const btn = makeButton(move.description, () => void playMove(move));
-    section.appendChild(btn);
+    btn.className = "move-btn";
+    list.appendChild(btn);
   }
+  section.appendChild(list);
+  container.appendChild(section);
 }
 function renderDiscard(container, state) {
-  const section = appendText(container, "section", "");
-  appendText(section, "h4", "Recent cards played");
+  const section = document.createElement("section");
+  section.className = "panel-section";
+  appendText(section, "h4", "Recent Cards Played");
   if (state.discard.length === 0) {
     appendText(section, "p", "No cards have been played yet.");
+    container.appendChild(section);
     return;
   }
+  const list = document.createElement("div");
+  list.className = "discard-list";
   for (const card of state.discard) {
-    appendText(section, "p", `${card.username} played ${card.value}: ${card.description}`);
+    appendText(
+      list,
+      "div",
+      `${card.username} played ${card.value}: ${card.description}`
+    ).className = "discard-item";
+  }
+  section.appendChild(list);
+  container.appendChild(section);
+}
+function renderActions(container, state) {
+  const actions = document.createElement("div");
+  actions.className = "actions-row";
+  if (state.game.status === "waiting") {
+    const b = makeButton("Join Game", () => void postAction("join", "Joined game."));
+    b.className = "btn-action btn-join";
+    actions.appendChild(b);
+  }
+  if (state.game.status === "waiting" && state.players.length >= 2) {
+    const b = makeButton("Start Game", () => void postAction("start", "Game started."));
+    b.className = "btn-action btn-start";
+    actions.appendChild(b);
+  }
+  if (state.game.status === "active" && state.pendingCard === null) {
+    const b = makeButton("Draw Card", () => void postAction("draw-card", "Card drawn."));
+    b.className = "btn-action btn-draw";
+    actions.appendChild(b);
+  }
+  if (actions.childElementCount > 0) {
+    container.appendChild(actions);
   }
 }
 function renderSelectedGame() {
@@ -191,35 +267,27 @@ function renderSelectedGame() {
   if (detail === null) return;
   clearElement(detail);
   if (store.gameState === null) {
-    appendText(detail, "p", "Create or view a game to get started.");
+    appendText(detail, "div", "Select or create a game to get started.").className = "game-detail-empty";
     return;
   }
   const state = store.gameState;
-  appendText(detail, "h3", `Game #${String(state.game.id)}`);
-  appendText(detail, "p", `Status: ${state.game.status}`);
-  appendText(detail, "p", `Deck remaining: ${String(state.deckRemaining)}`);
+  const header = document.createElement("div");
+  header.className = "game-header";
+  appendText(header, "h3", `Game #${String(state.game.id)}`).className = "game-title";
+  const meta = document.createElement("div");
+  meta.className = "game-meta";
+  appendText(meta, "span", state.game.status).className = `status-badge status-badge--${state.game.status}`;
+  appendText(meta, "span", `${String(state.deckRemaining)} cards left`);
+  header.appendChild(meta);
+  detail.appendChild(header);
   if (state.game.winner_id !== null) {
     const winner = state.players.find((p) => p.id === state.game.winner_id);
     const name = winner !== void 0 ? winner.username : "Unknown";
-    appendText(detail, "h3", `Winner: ${name}!`);
+    appendText(detail, "div", `${name} wins!`).className = "winner-banner";
   }
   renderPlayers(detail, state);
   renderPawns(detail, state);
-  if (state.game.status === "waiting") {
-    detail.appendChild(
-      makeButton("Join Game", () => void postAction("join", "Joined game."))
-    );
-  }
-  if (state.game.status === "waiting" && state.players.length >= 2) {
-    detail.appendChild(
-      makeButton("Start Game", () => void postAction("start", "Game started."))
-    );
-  }
-  if (state.game.status === "active" && state.pendingCard === null) {
-    detail.appendChild(
-      makeButton("Draw Card", () => void postAction("draw-card", "Card drawn."))
-    );
-  }
+  renderActions(detail, state);
   renderPendingCard(detail, state);
   renderValidMoves(detail, state);
   renderDiscard(detail, state);

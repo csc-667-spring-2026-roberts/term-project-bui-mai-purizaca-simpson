@@ -8,12 +8,12 @@
 </head>
 <body>
   <nav>
-    <a href="/">Sorry! Multiplayer</a>
+    <a href="/lobby" class="nav-brand">Sorry!</a>
 
     <% if (typeof user !== "undefined" && user) { %>
-      <span>Signed in as <%= user.email %></span>
+      <span><%= user.email %></span>
       <form action="/auth/logout" method="POST">
-        <button type="submit">Logout</button>
+        <button type="submit">Log out</button>
       </form>
     <% } else { %>
       <a href="/auth/login">Login</a>

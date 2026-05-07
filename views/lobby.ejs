@@ -1,34 +1,31 @@
 <main>
-  <h1>Sorry! Multiplayer Lobby</h1>
+  <div class="lobby-header">
+    <h1>Sorry!</h1>
+    <div class="lobby-status">
+      <span id="sse-status" class="sse-status sse-status--disconnected">disconnected</span>
+      <span id="lobby-message"></span>
+    </div>
+  </div>
 
-  <p>
-    Create a Sorry! game, join with two players, start the game, then draw/play
-    one card. Updates are pushed live through server-sent events.
-  </p>
+  <div class="lobby-layout">
+    <aside>
+      <div class="panel">
+        <div class="panel-header">
+          <h2>Games</h2>
+          <button id="create-game-btn" class="btn-create" type="button">+ New</button>
+        </div>
+        <div id="game-list" class="game-list"></div>
+      </div>
+    </aside>
 
-  <p>Logged in as: <strong><%= user.email %></strong></p>
-
-  <section>
-    <h2>Live Connection</h2>
-    <p>
-      SSE status:
-      <span id="sse-status" class="sse-status sse-status--disconnected">
-        disconnected
-      </span>
-    </p>
-    <p id="lobby-message"></p>
-  </section>
-
-  <section>
-    <h2>Games</h2>
-    <button id="create-game-btn" type="button">Create Sorry! Game</button>
-    <div id="game-list" class="game-list"></div>
-  </section>
-
-  <section>
-    <h2>Selected Game</h2>
-    <div id="game-detail" class="game-detail"></div>
-  </section>
+    <section>
+      <div class="panel">
+        <div id="game-detail" class="game-detail">
+          <div class="game-detail-empty">Select or create a game to get started.</div>
+        </div>
+      </div>
+    </section>
+  </div>
 
   <script defer type="module" src="/js/lobby.js"></script>
 </main>

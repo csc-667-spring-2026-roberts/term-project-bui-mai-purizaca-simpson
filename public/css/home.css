@@ -1,32 +1,728 @@
-body{
-    font-family: sans-serif;
-    margin: 2rem auto;
-    max-width: 900px;
-    padding: 0 1rem;
+:root {
+  --red: #dc2626;
+  --blue: #2563eb;
+  --yellow: #ca8a04;
+  --green: #16a34a;
+  --bg: #f9f5ec;
+  --card-bg: #ffffff;
+  --nav-bg: #1e1b4b;
+  --border: #e0d6c0;
+  --text: #1c1917;
+  --muted: #78716c;
+  --radius: 10px;
+  --shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
-form div {
-    margin-bottom: 1rem;
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
-label{
-    display: block;
-    margin-bottom: 0.25rem;
+
+body {
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
 }
-input{
-    width: 100%;
-    padding: 0.5rem;
-    box-sizing: border-box;
+
+/* ── Navigation ─────────────────────────────── */
+
+nav {
+  background: var(--nav-bg);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0 1.5rem;
+  height: 54px;
 }
-button{
-    padding: 0.5rem 1rem;
-    cursor: pointer;
+
+nav a {
+  color: #e2e8f0;
+  text-decoration: none;
+  font-size: 0.95rem;
 }
-.error {
-    color: red;
-    margin-bottom: 1rem;
-    padding: 0.5rem;
-    border: 1px solid red;
-    border-radius: 4px;
+
+.nav-brand {
+  color: #fbbf24 !important;
+  font-weight: 800;
+  font-size: 1.3rem !important;
+  margin-right: auto;
+  letter-spacing: -0.02em;
 }
+
+nav span {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  margin-left: auto;
+}
+
 nav form {
-    display: inline;
+  display: inline;
+}
+
+nav button {
+  background: transparent;
+  border: 1px solid #475569;
+  color: #e2e8f0;
+  padding: 0.3rem 0.85rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+nav button:hover {
+  border-color: #fbbf24;
+  color: #fbbf24;
+}
+
+/* ── Page layout ─────────────────────────────── */
+
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+/* ── Auth pages ──────────────────────────────── */
+
+.auth-wrapper {
+  min-height: calc(100vh - 54px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.auth-card {
+  background: var(--card-bg);
+  padding: 2.5rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  width: 100%;
+  max-width: 420px;
+}
+
+.auth-card h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: var(--red);
+  font-weight: 800;
+}
+
+.form-group {
+  margin-bottom: 1.1rem;
+}
+
+label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.35rem;
+  color: var(--muted);
+}
+
+input[type="email"],
+input[type="password"],
+input[type="text"] {
+  width: 100%;
+  padding: 0.6rem 0.9rem;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  background: #fafaf9;
+  transition: border-color 0.15s;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--red);
+}
+
+.auth-card button[type="submit"] {
+  width: 100%;
+  background: var(--red);
+  color: white;
+  border: none;
+  padding: 0.7rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: background 0.15s;
+}
+
+.auth-card button[type="submit"]:hover {
+  background: #b91c1c;
+}
+
+.auth-card > p {
+  margin-top: 1.25rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.auth-card a {
+  color: var(--red);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+/* ── Error message ───────────────────────────── */
+
+.error {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #dc2626;
+  padding: 0.65rem 0.9rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+/* ── Lobby header ────────────────────────────── */
+
+.lobby-header {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 1.75rem;
+  flex-wrap: wrap;
+}
+
+.lobby-header h1 {
+  font-size: 1.75rem;
+  color: var(--red);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+.lobby-status {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+#lobby-message {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-style: italic;
+  max-width: 240px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── SSE status badge ────────────────────────── */
+
+.sse-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 99px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sse-status::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.sse-status--connected {
+  color: var(--green);
+  background: #dcfce7;
+}
+
+.sse-status--disconnected {
+  color: var(--muted);
+  background: #f5f5f4;
+}
+
+.sse-status--reconnecting {
+  color: var(--yellow);
+  background: #fefce8;
+}
+
+/* ── Two-column lobby layout ─────────────────── */
+
+.lobby-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 700px) {
+  .lobby-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Panel ──────────────────────────────────── */
+
+.panel {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-header h2 {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+/* ── Game list ──────────────────────────────── */
+
+.game-list {
+  padding: 0.5rem;
+}
+
+.game-list > p {
+  padding: 1.5rem 1rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.game-card {
+  padding: 0.75rem 0.9rem;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  margin-bottom: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: #fafaf9;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.game-card:hover {
+  border-color: var(--red);
+  box-shadow: 0 0 0 2px #fee2e2;
+}
+
+.game-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.game-card h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.game-card p {
+  font-size: 0.775rem;
+  color: var(--muted);
+  margin-top: 0.1rem;
+}
+
+.game-card button {
+  background: var(--red);
+  color: white;
+  border: none;
+  padding: 0.3rem 0.75rem;
+  border-radius: 5px;
+  font-size: 0.775rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.game-card button:hover {
+  background: #b91c1c;
+}
+
+/* ── Create game button ──────────────────────── */
+
+.btn-create {
+  background: var(--red);
+  color: white;
+  border: none;
+  padding: 0.4rem 0.9rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-create:hover {
+  background: #b91c1c;
+}
+
+/* ── Game detail panel ──────────────────────── */
+
+.game-detail {
+  min-height: 160px;
+}
+
+.game-detail-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 180px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* ── Game header ─────────────────────────────── */
+
+.game-header {
+  padding: 1.1rem 1.25rem 0.75rem;
+}
+
+.game-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+
+.game-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 99px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.status-badge--waiting {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.status-badge--active {
+  background: #dcfce7;
+  color: #14532d;
+}
+
+.status-badge--finished {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+/* ── Winner banner ──────────────────────────── */
+
+.winner-banner {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  padding: 0.9rem 1.25rem;
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+/* ── Panel sections ─────────────────────────── */
+
+.panel-section {
+  padding: 0.85rem 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.panel-section h4 {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+  margin-bottom: 0.6rem;
+  font-weight: 700;
+}
+
+/* ── Action buttons row ─────────────────────── */
+
+.actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.85rem 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.btn-action {
+  padding: 0.45rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.btn-action:active {
+  transform: scale(0.97);
+}
+
+.btn-join {
+  background: #eff6ff;
+  color: var(--blue);
+  border: 1.5px solid #bfdbfe;
+}
+
+.btn-join:hover {
+  background: #dbeafe;
+}
+
+.btn-start {
+  background: var(--green);
+  color: white;
+  border: none;
+}
+
+.btn-start:hover {
+  background: #15803d;
+}
+
+.btn-draw {
+  background: var(--red);
+  color: white;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 0.55rem 1.5rem;
+}
+
+.btn-draw:hover {
+  background: #b91c1c;
+}
+
+.btn-forfeit {
+  background: #f8fafc;
+  color: #64748b;
+  border: 1.5px solid #e2e8f0;
+}
+
+.btn-forfeit:hover {
+  background: #f1f5f9;
+}
+
+/* ── Players list ───────────────────────────── */
+
+.players-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.player-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.875rem;
+}
+
+.player-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 2px solid rgba(0, 0, 0, 0.12);
+}
+
+.player-dot--red {
+  background: var(--red);
+}
+
+.player-dot--blue {
+  background: var(--blue);
+}
+
+.player-dot--yellow {
+  background: var(--yellow);
+}
+
+.player-dot--green {
+  background: var(--green);
+}
+
+/* ── Pawns display ──────────────────────────── */
+
+.pawn-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.55rem;
+}
+
+.pawn-row:last-child {
+  margin-bottom: 0;
+}
+
+.pawn-player-name {
+  min-width: 76px;
+  font-size: 0.775rem;
+  font-weight: 500;
+  color: var(--muted);
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pawn-dot {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 800;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+  position: relative;
+  cursor: default;
+}
+
+.pawn-dot--red {
+  background: var(--red);
+}
+
+.pawn-dot--blue {
+  background: var(--blue);
+}
+
+.pawn-dot--yellow {
+  background: var(--yellow);
+}
+
+.pawn-dot--green {
+  background: var(--green);
+}
+
+.pawn-dot.is-home {
+  box-shadow: 0 0 0 3px #fbbf24;
+}
+
+.pawn-dot.is-start {
+  opacity: 0.45;
+}
+
+.pawn-dot[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: calc(100% + 5px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1c1917;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* ── Drawn card ─────────────────────────────── */
+
+.drawn-card {
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 0.85rem 1.1rem;
+  max-width: 220px;
+  box-shadow: 2px 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card-value {
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--red);
+  font-family: Georgia, serif;
+  line-height: 1;
+  margin-bottom: 0.35rem;
+}
+
+.card-desc {
+  font-size: 0.775rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+/* ── Valid moves ────────────────────────────── */
+
+.moves-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.move-btn {
+  background: #eff6ff;
+  color: var(--blue);
+  border: 1.5px solid #bfdbfe;
+  padding: 0.45rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+  width: 100%;
+}
+
+.move-btn:hover {
+  background: #dbeafe;
+  border-color: var(--blue);
+}
+
+/* ── Discard pile ───────────────────────────── */
+
+.discard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.discard-item {
+  font-size: 0.775rem;
+  color: var(--muted);
+  padding: 0.3rem 0;
+  border-bottom: 1px solid #f5f0e8;
+}
+
+.discard-item:last-child {
+  border-bottom: none;
 }
