@@ -42,6 +42,8 @@ type PawnRow = {
   position: number | null;
 };
 
+type PawnWithPlayerRow = PawnRow & { color: string; username: string };
+
 type ValidMove = {
   pawnId: number;
   action: string;
@@ -67,7 +69,7 @@ type GameState = {
   deckRemaining: number;
   discard: DiscardRow[];
   myPlayerId: number | null;
-  pawns: PawnRow[];
+  pawns: PawnWithPlayerRow[];
   pendingCard: CardRow | null;
   validMoves: ValidMove[];
 };
@@ -475,10 +477,14 @@ async function getGameState(gameId: number, userId: number): Promise<GameState> 
      WHERE gd.game_id = $1 ORDER BY gd.id DESC LIMIT 10`,
     [gameId],
   );
-  const pawns = await db.any<PawnRow>(
-    `SELECT p.id, p.player_id, p.board_space_id, p.pawn_number, p.is_home, p.is_start, bs.position
-     FROM pawn p LEFT JOIN board_space bs ON bs.id = p.board_space_id
-     WHERE p.player_id IN (SELECT id FROM player WHERE game_id = $1) ORDER BY p.player_id, p.pawn_number`,
+  const pawns = await db.any<PawnWithPlayerRow>(
+    `SELECT p.id, p.player_id, p.board_space_id, p.pawn_number, p.is_home, p.is_start,
+            bs.position, pl.color, pl.username
+     FROM pawn p
+     LEFT JOIN board_space bs ON bs.id = p.board_space_id
+     JOIN player pl ON pl.id = p.player_id
+     WHERE p.player_id IN (SELECT id FROM player WHERE game_id = $1)
+     ORDER BY p.player_id, p.pawn_number`,
     [gameId],
   );
   const myPlayer = players.find((p) => p.user_id === userId);

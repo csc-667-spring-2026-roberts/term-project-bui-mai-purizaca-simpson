@@ -50,37 +50,36 @@ async function loadGameState(gameId) {
   updateStore({ selectedGameId: gameId, gameState });
 }
 async function createGame() {
-  const game = await fetchJson("/games", { method: "POST" });
-  updateStore({
-    selectedGameId: game.id,
-    message: `Created game #${String(game.id)}.`
-  });
-  await loadGames();
-  await loadGameState(game.id);
+  try {
+    const game = await fetchJson("/games", { method: "POST" });
+    updateStore({ selectedGameId: game.id, message: `Created game #${String(game.id)}.` });
+    await loadGames();
+    await loadGameState(game.id);
+  } catch (err) {
+    updateStore({ message: err instanceof Error ? err.message : "Could not create game." });
+  }
 }
 async function postAction(path, successMessage, body) {
   const gameId = store.selectedGameId;
   if (gameId === null) return;
-  await fetchJson(`/games/${String(gameId)}/${path}`, {
-    method: "POST",
-    body: body !== void 0 ? JSON.stringify(body) : void 0
-  });
-  updateStore({ message: successMessage });
-  await loadGames();
-  await loadGameState(gameId);
+  try {
+    await fetchJson(`/games/${String(gameId)}/${path}`, {
+      method: "POST",
+      body: body !== void 0 ? JSON.stringify(body) : void 0
+    });
+    updateStore({ message: successMessage });
+    await loadGames();
+    await loadGameState(gameId);
+  } catch (err) {
+    updateStore({ message: err instanceof Error ? err.message : "Action failed." });
+  }
 }
 async function playMove(move) {
-  const body = {
-    pawnId: move.pawnId,
-    targetPosition: move.targetPosition
-  };
-  if (move.splitPawnId !== void 0) {
-    body.splitPawnId = move.splitPawnId;
-  }
-  if (move.splitTargetPosition !== void 0) {
-    body.splitTargetPosition = move.splitTargetPosition;
-  }
-  await postAction("move-pawn", `Moved pawn ${String(move.pawnNumber)}.`, body);
+  const body = { pawnId: move.pawnId, action: move.action };
+  if (move.targetPawnId !== void 0) body.targetPawnId = move.targetPawnId;
+  if (move.pawnId2 !== void 0) body.pawnId2 = move.pawnId2;
+  if (move.steps1 !== void 0) body.steps1 = move.steps1;
+  await postAction("move-pawn", "Move made.", body);
 }
 function connectSSE() {
   const eventSource = new EventSource("/api/sse");
@@ -203,7 +202,10 @@ function renderValidMoves(container, state) {
   appendText(section, "h4", "Valid Moves");
   if (state.validMoves.length === 0) {
     appendText(section, "p", "No valid moves.");
-    const btn = makeButton("Forfeit Turn", () => void postAction("forfeit-turn", "Turn forfeited."));
+    const btn = makeButton(
+      "Forfeit Turn",
+      () => void postAction("forfeit-turn", "Turn forfeited.")
+    );
     btn.className = "btn-action btn-forfeit";
     section.appendChild(btn);
     container.appendChild(section);
@@ -212,7 +214,7 @@ function renderValidMoves(container, state) {
   const list = document.createElement("div");
   list.className = "moves-list";
   for (const move of state.validMoves) {
-    const btn = makeButton(move.description, () => void playMove(move));
+    const btn = makeButton(move.label, () => void playMove(move));
     btn.className = "move-btn";
     list.appendChild(btn);
   }

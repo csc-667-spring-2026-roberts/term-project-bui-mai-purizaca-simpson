@@ -35,11 +35,13 @@ type Card = {
 
 type ValidMove = {
   pawnId: number;
-  pawnNumber: number;
-  targetPosition: number;
-  description: string;
-  splitPawnId?: number;
-  splitTargetPosition?: number;
+  action: string;
+  newRelative?: number;
+  targetPawnId?: number;
+  pawnId2?: number;
+  newRelative2?: number;
+  steps1?: number;
+  label: string;
 };
 
 type Discard = {
@@ -143,43 +145,39 @@ async function loadGameState(gameId: number): Promise<void> {
 }
 
 async function createGame(): Promise<void> {
-  const game = await fetchJson<{ id: number }>("/games", { method: "POST" });
-  updateStore({
-    selectedGameId: game.id,
-    message: `Created game #${String(game.id)}.`,
-  });
-  await loadGames();
-  await loadGameState(game.id);
+  try {
+    const game = await fetchJson<{ id: number }>("/games", { method: "POST" });
+    updateStore({ selectedGameId: game.id, message: `Created game #${String(game.id)}.` });
+    await loadGames();
+    await loadGameState(game.id);
+  } catch (err) {
+    updateStore({ message: err instanceof Error ? err.message : "Could not create game." });
+  }
 }
 
 async function postAction(path: string, successMessage: string, body?: object): Promise<void> {
   const gameId = store.selectedGameId;
   if (gameId === null) return;
 
-  await fetchJson<GameState>(`/games/${String(gameId)}/${path}`, {
-    method: "POST",
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
-
-  updateStore({ message: successMessage });
-  await loadGames();
-  await loadGameState(gameId);
+  try {
+    await fetchJson<unknown>(`/games/${String(gameId)}/${path}`, {
+      method: "POST",
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+    updateStore({ message: successMessage });
+    await loadGames();
+    await loadGameState(gameId);
+  } catch (err) {
+    updateStore({ message: err instanceof Error ? err.message : "Action failed." });
+  }
 }
 
 async function playMove(move: ValidMove): Promise<void> {
-  const body: Record<string, number> = {
-    pawnId: move.pawnId,
-    targetPosition: move.targetPosition,
-  };
-
-  if (move.splitPawnId !== undefined) {
-    body.splitPawnId = move.splitPawnId;
-  }
-  if (move.splitTargetPosition !== undefined) {
-    body.splitTargetPosition = move.splitTargetPosition;
-  }
-
-  await postAction("move-pawn", `Moved pawn ${String(move.pawnNumber)}.`, body);
+  const body: Record<string, unknown> = { pawnId: move.pawnId, action: move.action };
+  if (move.targetPawnId !== undefined) body.targetPawnId = move.targetPawnId;
+  if (move.pawnId2 !== undefined) body.pawnId2 = move.pawnId2;
+  if (move.steps1 !== undefined) body.steps1 = move.steps1;
+  await postAction("move-pawn", "Move made.", body);
 }
 
 function connectSSE(): void {
@@ -349,7 +347,7 @@ function renderValidMoves(container: HTMLElement, state: GameState): void {
   list.className = "moves-list";
 
   for (const move of state.validMoves) {
-    const btn = makeButton(move.description, () => void playMove(move));
+    const btn = makeButton(move.label, () => void playMove(move));
     btn.className = "move-btn";
     list.appendChild(btn);
   }
