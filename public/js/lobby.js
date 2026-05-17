@@ -138,7 +138,7 @@ async function handleSseMessage(rawData) {
   if (payload.type === "bump" && payload.bump !== void 0) {
     const bump = payload.bump;
     showToast(
-      `${bump.bumperUsername} bumped ${bump.bumpedUsername}'s pawn ${bump.pawnNumber} back to start!`,
+      `${bump.bumperUsername} bumped ${bump.bumpedUsername}'s pawn ${String(bump.pawnNumber)} back to start!`,
       4e3
     );
   }
@@ -257,53 +257,52 @@ var START_ZONES = {
     labelPos: { bottom: "5px", left: "5px" }
   }
 };
-function renderBoard(container, state) {
-  const section = document.createElement("section");
-  section.className = "panel-section";
-  const wrap = document.createElement("div");
-  wrap.style.cssText = "overflow-x:auto;";
+function buildBoardGrid() {
   const grid = Array.from(
     { length: BOARD_SIZE },
-    () => Array(BOARD_SIZE).fill(null)
+    () => Array.from({ length: BOARD_SIZE }).fill(null)
   );
-  for (let i = 0; i < 14; i++) grid[0][i + 1] = i + 1;
-  for (let i = 0; i < 14; i++) grid[i + 1][15] = 15 + i;
-  for (let i = 0; i < 14; i++) grid[15][14 - i] = 29 + i;
-  for (let i = 0; i < 14; i++) grid[14 - i][0] = 43 + i;
-  grid[0][0] = 57;
-  grid[0][15] = 58;
-  grid[15][15] = 59;
-  grid[15][0] = 60;
-  const pawnsByCell = /* @__PURE__ */ new Map();
-  for (const pawn of state.pawns) {
-    if (pawn.is_start || pawn.is_home) continue;
-    const cell = DB_POS_TO_CELL[pawn.position];
-    if (cell === void 0) continue;
-    const key = `${cell[0]},${cell[1]}`;
-    const arr = pawnsByCell.get(key) ?? [];
-    arr.push(pawn);
-    pawnsByCell.set(key, arr);
+  for (let i = 0; i < 14; i++) {
+    const r0 = grid[0];
+    const ri = grid[i + 1];
+    const r15 = grid[15];
+    const rl = grid[14 - i];
+    if (r0 !== void 0) r0[i + 1] = i + 1;
+    if (ri !== void 0) ri[15] = 15 + i;
+    if (r15 !== void 0) r15[14 - i] = 29 + i;
+    if (rl !== void 0) rl[0] = 43 + i;
   }
-  const startZonePawns = /* @__PURE__ */ new Map();
-  const homePawns = /* @__PURE__ */ new Map();
-  for (const pawn of state.pawns) {
-    if (pawn.is_start) {
-      const arr = startZonePawns.get(pawn.color) ?? [];
-      arr.push(pawn);
-      startZonePawns.set(pawn.color, arr);
-    }
-    if (pawn.is_home) {
-      const arr = homePawns.get(pawn.color) ?? [];
-      arr.push(pawn);
-      homePawns.set(pawn.color, arr);
-    }
+  const firstRow = grid[0];
+  const lastRow = grid[15];
+  if (firstRow !== void 0) {
+    firstRow[0] = 57;
+    firstRow[15] = 58;
   }
+  if (lastRow !== void 0) {
+    lastRow[15] = 59;
+    lastRow[0] = 60;
+  }
+  return grid;
+}
+function makePawnDot(pawn, size, fontSize) {
+  const dot = document.createElement("div");
+  dot.style.cssText = `
+    width:${String(size)}px; height:${String(size)}px; border-radius:50%;
+    background:${pawnColor(pawn.color)};
+    border:1px solid rgba(0,0,0,0.2);
+    display:flex; align-items:center; justify-content:center;
+    font-size:${String(fontSize)}px; color:white; font-weight:500; line-height:1;
+  `;
+  dot.textContent = String(pawn.pawn_number);
+  return dot;
+}
+function buildBoardCells(grid, pawnsByCell) {
   const board = document.createElement("div");
   board.style.cssText = `
     display: grid;
-    grid-template-columns: repeat(${BOARD_SIZE}, ${CELL}px);
-    grid-template-rows: repeat(${BOARD_SIZE}, ${CELL}px);
-    gap: ${GAP}px;
+    grid-template-columns: repeat(${String(BOARD_SIZE)}, ${String(CELL)}px);
+    grid-template-rows: repeat(${String(BOARD_SIZE)}, ${String(CELL)}px);
+    gap: ${String(GAP)}px;
     position: relative;
     width: fit-content;
     margin: 0 auto;
@@ -314,45 +313,36 @@ function renderBoard(container, state) {
       const pos = grid[r]?.[c] ?? null;
       if (pos !== null) {
         cell.style.cssText = `
-          width:${CELL}px; height:${CELL}px; border-radius:3px;
-          background:#ffffff;
-          border:1px solid #cccccc;
+          width:${String(CELL)}px; height:${String(CELL)}px; border-radius:3px;
+          background:#ffffff; border:1px solid #cccccc;
           display:flex; align-items:center; justify-content:center;
           flex-wrap:wrap; gap:1px;
-          font-size:7px; font-weight:500; color:#999999;
-          position:relative;
+          font-size:7px; font-weight:500; color:#999999; position:relative;
         `;
-        const key = `${r},${c}`;
-        const pawnsHere = pawnsByCell.get(key) ?? [];
-        if (pawnsHere.length > 0) {
-          for (const pawn of pawnsHere) {
-            const dot = document.createElement("div");
-            dot.style.cssText = `
-              width:10px; height:10px; border-radius:50%;
-              background:${pawnColor(pawn.color)};
-              border:1px solid rgba(0,0,0,0.2);
-              display:flex; align-items:center; justify-content:center;
-              font-size:6px; color:white; font-weight:500; line-height:1;
-            `;
-            dot.textContent = String(pawn.pawn_number);
-            dot.title = `${pawn.username} pawn ${pawn.pawn_number}`;
-            cell.appendChild(dot);
-          }
-        } else {
+        const pawnsHere = pawnsByCell.get(`${String(r)},${String(c)}`) ?? [];
+        for (const pawn of pawnsHere) {
+          const dot = makePawnDot(pawn, 10, 6);
+          dot.title = `${pawn.username} pawn ${String(pawn.pawn_number)}`;
+          cell.appendChild(dot);
+        }
+        if (pawnsHere.length === 0) {
           cell.textContent = String(pos);
         }
       } else {
-        cell.style.cssText = `width:${CELL}px; height:${CELL}px; background:transparent;`;
+        cell.style.cssText = `width:${String(CELL)}px; height:${String(CELL)}px; background:transparent;`;
       }
       board.appendChild(cell);
     }
   }
+  return board;
+}
+function addStartZones(board, startZonePawns) {
   for (const [colorName, cfg] of Object.entries(START_ZONES)) {
     const zone = document.createElement("div");
     zone.style.cssText = `
       position:absolute;
-      left:${cfg.left}px; top:${cfg.top}px;
-      width:${START_ZONE_SIZE}px; height:${START_ZONE_SIZE}px;
+      left:${String(cfg.left)}px; top:${String(cfg.top)}px;
+      width:${String(START_ZONE_SIZE)}px; height:${String(START_ZONE_SIZE)}px;
       background:${cfg.bg}; border:1px solid ${cfg.border};
       border-radius:5px;
       display:flex; flex-wrap:wrap; align-items:center; justify-content:center;
@@ -361,29 +351,44 @@ function renderBoard(container, state) {
     const label = document.createElement("span");
     label.textContent = "START";
     label.style.cssText = `
-      position:absolute;
-      bottom:4px; left:0; right:0;
+      position:absolute; bottom:4px; left:0; right:0;
       text-align:center;
       font-size:8px; font-weight:600; letter-spacing:1.5px;
       color:${cfg.textColor}; white-space:nowrap;
-`;
+    `;
     zone.appendChild(label);
-    const pawnsHere = startZonePawns.get(colorName) ?? [];
-    for (const pawn of pawnsHere) {
-      const dot = document.createElement("div");
-      dot.style.cssText = `
-        width:12px; height:12px; border-radius:50%;
-        background:${pawnColor(pawn.color)};
-        border:1px solid rgba(0,0,0,0.2);
-        display:flex; align-items:center; justify-content:center;
-        font-size:7px; color:white; font-weight:500;
-      `;
-      dot.textContent = String(pawn.pawn_number);
-      dot.title = `${pawn.username} pawn ${pawn.pawn_number} (start)`;
+    for (const pawn of startZonePawns.get(colorName) ?? []) {
+      const dot = makePawnDot(pawn, 12, 7);
+      dot.title = `${pawn.username} pawn ${String(pawn.pawn_number)} (start)`;
       zone.appendChild(dot);
     }
     board.appendChild(zone);
   }
+}
+function renderBoard(container, state) {
+  const section = document.createElement("section");
+  section.className = "panel-section";
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "overflow-x:auto;";
+  const pawnsByCell = /* @__PURE__ */ new Map();
+  const startZonePawns = /* @__PURE__ */ new Map();
+  for (const pawn of state.pawns) {
+    if (pawn.is_start) {
+      const arr2 = startZonePawns.get(pawn.color) ?? [];
+      arr2.push(pawn);
+      startZonePawns.set(pawn.color, arr2);
+      continue;
+    }
+    if (pawn.is_home) continue;
+    const cell = DB_POS_TO_CELL[pawn.position];
+    if (cell === void 0) continue;
+    const key = `${String(cell[0])},${String(cell[1])}`;
+    const arr = pawnsByCell.get(key) ?? [];
+    arr.push(pawn);
+    pawnsByCell.set(key, arr);
+  }
+  const board = buildBoardCells(buildBoardGrid(), pawnsByCell);
+  addStartZones(board, startZonePawns);
   wrap.appendChild(board);
   section.appendChild(wrap);
   container.appendChild(section);
@@ -432,7 +437,7 @@ function renderPlayers(container, state) {
   for (const player of state.players) {
     const item = document.createElement("div");
     item.className = "player-item";
-    if (Number(player.turn_order) === Number(state.game.current_turn)) {
+    if (player.turn_order === state.game.current_turn) {
       item.className += " player-item--current-turn";
       item.style.backgroundColor = "rgba(255, 193, 7, 0.1)";
       item.style.border = "2px solid #ffc107";
@@ -442,7 +447,7 @@ function renderPlayers(container, state) {
     dot.className = `player-dot player-dot--${player.color}`;
     item.appendChild(dot);
     const nameSpan = appendText(item, "span", player.username);
-    if (Number(player.turn_order) === Number(state.game.current_turn)) {
+    if (player.turn_order === state.game.current_turn) {
       nameSpan.style.fontWeight = "bold";
     }
     list.appendChild(item);
@@ -453,10 +458,8 @@ function renderPlayers(container, state) {
 function renderPendingCard(container, state) {
   if (state.pendingCard === null) return;
   const myPlayer = state.players.find((p) => p.id === state.myPlayerId);
-  const isMyTurn = myPlayer !== void 0 && Number(myPlayer.turn_order) === Number(state.game.current_turn);
-  const activePlayer = state.players.find(
-    (p) => Number(p.turn_order) === Number(state.game.current_turn)
-  );
+  const isMyTurn = myPlayer !== void 0 && myPlayer.turn_order === state.game.current_turn;
+  const activePlayer = state.players.find((p) => p.turn_order === state.game.current_turn);
   const section = document.createElement("section");
   section.className = "panel-section";
   appendText(
@@ -474,18 +477,12 @@ function renderPendingCard(container, state) {
 function renderValidMoves(container, state) {
   if (state.pendingCard === null) return;
   const myPlayer = state.players.find((p) => p.id === state.myPlayerId);
-  const isMyTurn = myPlayer !== void 0 && Number(myPlayer.turn_order) === Number(state.game.current_turn);
+  const isMyTurn = myPlayer !== void 0 && myPlayer.turn_order === state.game.current_turn;
   if (!isMyTurn) {
     const section2 = document.createElement("section");
     section2.className = "panel-section";
-    const activePlayer = state.players.find(
-      (p) => Number(p.turn_order) === Number(state.game.current_turn)
-    );
-    appendText(
-      section2,
-      "p",
-      `Waiting for ${activePlayer?.username ?? "opponent"} to move...`
-    );
+    const activePlayer = state.players.find((p) => p.turn_order === state.game.current_turn);
+    appendText(section2, "p", `Waiting for ${activePlayer?.username ?? "opponent"} to move...`);
     container.appendChild(section2);
     return;
   }
@@ -538,7 +535,7 @@ function renderActions(container, state) {
   const actions = document.createElement("div");
   actions.className = "actions-row";
   const myPlayer = state.players.find((p) => p.id === state.myPlayerId);
-  const isMyTurn = myPlayer !== void 0 && Number(myPlayer.turn_order) === Number(state.game.current_turn);
+  const isMyTurn = myPlayer !== void 0 && myPlayer.turn_order === state.game.current_turn;
   if (state.game.status === "waiting") {
     const b = makeButton("Join Game", () => void postAction("join", "Joined game."));
     b.className = "btn-action btn-join";
