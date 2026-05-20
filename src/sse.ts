@@ -57,4 +57,18 @@ function broadcastToGame(gameId: number, data: object): void {
   }
 }
 
-export { addClient, broadcast, broadcastToGame, broadcastToGameUser, removeClient };
+function isUserConnected(userId: number): boolean {
+  for (const [, client] of clients) {
+    if (client.userId === userId) return true;
+  }
+  return false;
+}
+
+export {
+  addClient,
+  broadcast,
+  broadcastToGame,
+  broadcastToGameUser,
+  isUserConnected,
+  removeClient,
+};

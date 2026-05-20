@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import db from "../db/connection.js";
 import { requireAuth } from "../middleware/requireAuth.js";
-import { broadcast } from "../sse.js";
+import { broadcast, isUserConnected } from "../sse.js";
 
 const router = Router();
 const PLAYER_COLORS = ["red", "blue", "yellow", "green"] as const;
@@ -802,6 +802,43 @@ router.post(
       );
       if (game.current_turn !== player.turn_order) throw new Error("Not your turn");
       await advanceTurn(tx, gameId, player.turn_order);
+    });
+    broadcast({ type: "gameStateChanged", gameId });
+    response.json(await getGameState(gameId, user.id));
+  },
+);
+
+router.post(
+  "/:gameId/skip-turn",
+  requireAuth,
+  async (request: Request, response: Response): Promise<void> => {
+    const user = getSessionUser(request);
+    const gameId = Number(request.params.gameId);
+    if (!Number.isInteger(gameId)) {
+      response.status(400).json({ error: "Invalid game id" });
+      return;
+    }
+    await db.tx(async (tx) => {
+      const game = await tx.one<GameRow>(
+        "SELECT id, status, current_turn, winner_id, pending_card_id FROM game WHERE id = $1",
+        [gameId],
+      );
+      if (game.status !== "active") throw new Error("Game is not active");
+      await tx.one<PlayerRow>("SELECT * FROM player WHERE game_id = $1 AND user_id = $2", [
+        gameId,
+        user.id,
+      ]);
+      const currentPlayer = await tx.oneOrNone<PlayerRow>(
+        "SELECT * FROM player WHERE game_id = $1 AND turn_order = $2",
+        [gameId, game.current_turn],
+      );
+      if (currentPlayer === null) throw new Error("No current player found");
+      if (currentPlayer.user_id === user.id)
+        throw new Error("Use forfeit-turn to skip your own turn");
+      if (currentPlayer.user_id !== null && isUserConnected(currentPlayer.user_id)) {
+        throw new Error(`${currentPlayer.username} is still connected — wait for them to move`);
+      }
+      await advanceTurn(tx, gameId, game.current_turn);
     });
     broadcast({ type: "gameStateChanged", gameId });
     response.json(await getGameState(gameId, user.id));

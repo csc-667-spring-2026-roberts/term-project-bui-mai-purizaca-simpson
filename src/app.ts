@@ -90,4 +90,18 @@ app.use((_request, response) => {
   response.status(404).json({ error: "Not found" });
 });
 
+ 
+app.use(
+  (
+    error: unknown,
+    _request: express.Request,
+    response: express.Response,
+    _next: express.NextFunction,
+  ) => {
+    const message = error instanceof Error ? error.message : "Internal server error";
+    console.error(error);
+    response.status(500).json({ error: message });
+  },
+);
+
 export default app;

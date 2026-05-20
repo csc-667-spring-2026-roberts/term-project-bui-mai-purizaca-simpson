@@ -80,6 +80,7 @@ async function loadGames() {
 }
 async function loadGameState(gameId) {
   const gameState = await fetchJson(`/games/${String(gameId)}`);
+  sessionStorage.setItem("selectedGameId", String(gameId));
   updateStore({ selectedGameId: gameId, gameState });
 }
 async function createGame() {
@@ -117,7 +118,13 @@ async function playMove(move) {
 }
 function connectSSE() {
   const eventSource = new EventSource("/api/sse");
+  let wasConnected = false;
   eventSource.addEventListener("open", () => {
+    if (wasConnected) {
+      void loadGames();
+      if (store.selectedGameId !== null) void loadGameState(store.selectedGameId);
+    }
+    wasConnected = true;
     updateStore({ connectionStatus: "connected" });
   });
   eventSource.addEventListener("error", () => {
@@ -158,6 +165,15 @@ POSITION_TO_CELL[58] = [0, 15];
 POSITION_TO_CELL[59] = [15, 15];
 POSITION_TO_CELL[60] = [15, 0];
 var DB_POS_TO_CELL = {
+  // Safe zone entries (one step inside each color's home corridor)
+  5: [0, 5],
+  // red safe zone
+  20: [5, 15],
+  // blue safe zone
+  35: [15, 9],
+  // yellow safe zone
+  50: [9, 0],
+  // green safe zone
   // Top edge L→R (grid row 0): DB 1-4 map to cols 1-4, DB 7-14 map to cols 6-13, corners at col 0 & 15
   1: [0, 1],
   2: [0, 2],
@@ -296,6 +312,7 @@ function makePawnDot(pawn, size, fontSize) {
   dot.textContent = String(pawn.pawn_number);
   return dot;
 }
+var SAFE_ZONE_SEQUENTIAL = /* @__PURE__ */ new Set([5, 19, 34, 48]);
 function buildBoardCells(grid, pawnsByCell) {
   const board = document.createElement("div");
   board.style.cssText = `
@@ -312,21 +329,25 @@ function buildBoardCells(grid, pawnsByCell) {
       const cell = document.createElement("div");
       const pos = grid[r]?.[c] ?? null;
       if (pos !== null) {
+        const isSafe = SAFE_ZONE_SEQUENTIAL.has(pos);
+        const bg = isSafe ? "#d1fae5" : "#ffffff";
+        const border = isSafe ? "#6ee7b7" : "#cccccc";
         cell.style.cssText = `
           width:${String(CELL)}px; height:${String(CELL)}px; border-radius:3px;
-          background:#ffffff; border:1px solid #cccccc;
+          background:${bg}; border:1px solid ${border};
           display:flex; align-items:center; justify-content:center;
           flex-wrap:wrap; gap:1px;
           font-size:7px; font-weight:500; color:#999999; position:relative;
         `;
+        if (isSafe) cell.title = "Safe zone \u2014 your pawn cannot be bumped here";
         const pawnsHere = pawnsByCell.get(`${String(r)},${String(c)}`) ?? [];
         for (const pawn of pawnsHere) {
           const dot = makePawnDot(pawn, 10, 6);
-          dot.title = `${pawn.username} pawn ${String(pawn.pawn_number)}`;
+          dot.title = `${pawn.username} pawn ${String(pawn.pawn_number)}${isSafe ? " (safe)" : ""}`;
           cell.appendChild(dot);
         }
         if (pawnsHere.length === 0) {
-          cell.textContent = String(pos);
+          cell.textContent = isSafe ? "SAFE" : String(pos);
         }
       } else {
         cell.style.cssText = `width:${String(CELL)}px; height:${String(CELL)}px; background:transparent;`;
@@ -437,7 +458,8 @@ function renderPlayers(container, state) {
   for (const player of state.players) {
     const item = document.createElement("div");
     item.className = "player-item";
-    if (player.turn_order === state.game.current_turn) {
+    const isCurrentTurn = player.turn_order === state.game.current_turn;
+    if (isCurrentTurn) {
       item.className += " player-item--current-turn";
       item.style.backgroundColor = "rgba(255, 193, 7, 0.1)";
       item.style.border = "2px solid #ffc107";
@@ -447,8 +469,11 @@ function renderPlayers(container, state) {
     dot.className = `player-dot player-dot--${player.color}`;
     item.appendChild(dot);
     const nameSpan = appendText(item, "span", player.username);
-    if (player.turn_order === state.game.current_turn) {
-      nameSpan.style.fontWeight = "bold";
+    if (isCurrentTurn) nameSpan.style.fontWeight = "bold";
+    const homePawns = state.pawns.filter((p) => p.player_id === player.id && p.is_home).length;
+    if (homePawns > 0) {
+      const homeTag = appendText(item, "span", `${String(homePawns)}/4 home`);
+      homeTag.style.cssText = "margin-left:auto; font-size:0.7rem; color:#16a34a; font-weight:600;";
     }
     list.appendChild(item);
   }
@@ -551,6 +576,14 @@ function renderActions(container, state) {
     b.className = "btn-action btn-draw";
     actions.appendChild(b);
   }
+  if (state.game.status === "active" && myPlayer !== void 0 && !isMyTurn) {
+    const activePlayer = state.players.find((p) => p.turn_order === state.game.current_turn);
+    const skipLabel = `Skip ${activePlayer?.username ?? "player"}'s turn (disconnected?)`;
+    const b = makeButton(skipLabel, () => void postAction("skip-turn", "Turn skipped."));
+    b.className = "btn-action btn-forfeit";
+    b.title = "Use this if the current player has disconnected and the game is stuck.";
+    actions.appendChild(b);
+  }
   if (actions.childElementCount > 0) {
     container.appendChild(actions);
   }
@@ -574,7 +607,7 @@ function renderSelectedGame() {
   header.appendChild(meta);
   detail.appendChild(header);
   if (state.game.winner_id !== null) {
-    const winner = state.players.find((p) => p.id === state.game.winner_id);
+    const winner = state.players.find((p) => p.user_id === state.game.winner_id);
     const name = winner !== void 0 ? winner.username : "Unknown";
     appendText(detail, "div", `${name} wins!`).className = "winner-banner";
   }
@@ -603,5 +636,15 @@ if (createButton instanceof HTMLButtonElement) {
   createButton.addEventListener("click", () => void createGame());
 }
 connectSSE();
-void loadGames();
+void loadGames().then(() => {
+  const stored = sessionStorage.getItem("selectedGameId");
+  if (stored !== null) {
+    const id = Number(stored);
+    if (Number.isInteger(id) && id > 0) {
+      void loadGameState(id).catch(() => {
+        sessionStorage.removeItem("selectedGameId");
+      });
+    }
+  }
+});
 //# sourceMappingURL=lobby.js.map
